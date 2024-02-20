@@ -1,0 +1,52 @@
+from kazoo.client import KazooClient
+import threading
+import time
+
+# Configuración de ZooKeeper
+zk_host = "localhost:2181"
+zk_path = "/recurso_compartido"
+
+# Inicializar el cliente de ZooKeeper
+zk = KazooClient(hosts=zk_host)
+zk.start()
+
+# Crear el nodo persistente si no existe
+if not zk.exists(zk_path):
+    zk.create(zk_path, b'')
+
+# Recurso compartido
+recurso_compartido = 0
+
+# Semáforo distribuido
+lock = zk.Lock(zk_path, "lock-")
+
+def productor():
+    global recurso_compartido
+    for _ in range(5):
+        with lock:
+            recurso_compartido += 1
+            print(f"Productor agrega 1. Recurso compartido: {recurso_compartido}")
+        time.sleep(1)
+
+def consumidor():
+    global recurso_compartido
+    for _ in range(5):
+        with lock:
+            recurso_compartido -= 1
+            print(f"Consumidor retira 1. Recurso compartido: {recurso_compartido}")
+        time.sleep(1)
+
+# Crear hilos para el productor y el consumidor
+hilo_productor = threading.Thread(target=productor)
+hilo_consumidor = threading.Thread(target=consumidor)
+
+# Iniciar los hilos
+hilo_productor.start()
+hilo_consumidor.start()
+
+# Esperar a que ambos hilos terminen
+hilo_productor.join()
+hilo_consumidor.join()
+
+# Cerrar la conexión con ZooKeeper
+zk.stop()
