@@ -1,0 +1,24 @@
+import os
+import concurrent.futures
+
+def procesar_archivo(archivo):
+    with open(archivo, 'r') as file:
+        contenido = file.read()
+        resultado = len(contenido.split())
+    return resultado
+
+def procesar_archivos_concurrentemente(lista_archivos):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Utilizar map para asignar los archivos a los hilos
+        resultados = list(executor.map(procesar_archivo, lista_archivos))
+    return resultados
+
+# Lista de archivos de ejemplo
+archivos_a_procesar = ['archivo1.txt', 'archivo2.txt', 'archivo3.txt', 'archivo4.txt']
+
+# Procesar archivos concurrentemente
+resultados_concurrentes = procesar_archivos_concurrentemente(archivos_a_procesar)
+
+# Imprimir resultados
+for archivo, resultado in zip(archivos_a_procesar, resultados_concurrentes):
+    print(f"Archivo: {archivo}, Resultado: {resultado}")
