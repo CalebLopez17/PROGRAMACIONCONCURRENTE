@@ -1,0 +1,55 @@
+import multiprocessing
+import time
+import random
+
+def procesar_tarea(tarea):
+    # Simular procesamiento de la tarea
+    time.sleep(1)
+    return f"Resultado de la tarea: {tarea}"
+
+def servidor(tarea_compartida, resultados_compartidos, indice_nodo, fallo_probabilidad):
+    while True:
+        tarea = tarea_compartida.get()
+        if tarea is None:
+            break  # Señal para detener el servidor
+
+        # Simular fallo con cierta probabilidad
+        if random.random() < fallo_probabilidad:
+            print(f"¡Fallo simulado en el Nodo {indice_nodo + 1}!")
+            continue  # Ignorar la tarea y continuar con la siguiente
+
+        resultado = procesar_tarea(tarea)
+        resultados_compartidos[indice_nodo].append(resultado)
+
+if __name__ == "__main__":
+    # Configuración
+    num_nodos = 3
+    tareas_por_nodo = 5
+    fallo_probabilidad = 0.2  # Probabilidad de fallo simulado
+
+    # Colas compartidas para tareas y resultados
+    tarea_compartida = multiprocessing.Queue()
+    resultados_compartidos = [multiprocessing.Manager().list() for _ in range(num_nodos)]
+
+    # Crear procesos del servidor
+    procesos_servidores = []
+    for i in range(num_nodos):
+        proceso_servidor = multiprocessing.Process(target=servidor, args=(tarea_compartida, resultados_compartidos, i, fallo_probabilidad))
+        procesos_servidores.append(proceso_servidor)
+        proceso_servidor.start()
+
+    # Enviar tareas a los nodos
+    for i in range(num_nodos * tareas_por_nodo):
+        tarea_compartida.put(f"Tarea {i + 1}")
+
+    # Enviar señal para detener los servidores
+    for _ in range(num_nodos):
+        tarea_compartida.put(None)
+
+    # Esperar a que todos los servidores terminen
+    for proceso_servidor in procesos_servidores:
+        proceso_servidor.join()
+
+    # Imprimir resultados
+    for i, resultados in enumerate(resultados_compartidos):
+        print(f"Resultados del Nodo {i + 1}: {resultados}")
