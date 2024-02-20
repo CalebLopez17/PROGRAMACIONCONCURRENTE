@@ -1,0 +1,62 @@
+import threading
+import time
+import random
+
+class Buffer:
+    def __init__(self, capacidad_maxima):
+        self.capacidad_maxima = capacidad_maxima
+        self.contenido = []
+        self.condicion = threading.Condition()
+
+    def producir(self, elemento):
+        with self.condicion:
+            while len(self.contenido) == self.capacidad_maxima:
+                print("El búfer está lleno. El productor espera.")
+                self.condicion.wait()
+
+            print(f"Productor produce: {elemento}")
+            self.contenido.append(elemento)
+            self.condicion.notifyAll()
+
+    def consumir(self):
+        with self.condicion:
+            while len(self.contenido) == 0:
+                print("El búfer está vacío. El consumidor espera.")
+                self.condicion.wait()
+
+            elemento = self.contenido.pop(0)
+            print(f"Consumidor consume: {elemento}")
+            self.condicion.notifyAll()
+
+def productor(buffer, elementos_a_producir):
+    for _ in range(elementos_a_producir):
+        elemento = random.randint(1, 100)
+        buffer.producir(elemento)
+        time.sleep(random.uniform(0.1, 0.5))
+
+def consumidor(buffer, elementos_a_consumir):
+    for _ in range(elementos_a_consumir):
+        buffer.consumir()
+        time.sleep(random.uniform(0.1, 0.5))
+
+# Configuración inicial
+capacidad_maxima_del_buffer = 5
+elementos_a_producir = 10
+elementos_a_consumir = 10
+
+# Crear el buffer compartido
+buffer_compartido = Buffer(capacidad_maxima_del_buffer)
+
+# Crear los hilos del productor y el consumidor
+hilo_productor = threading.Thread(target=productor, args=(buffer_compartido, elementos_a_producir))
+hilo_consumidor = threading.Thread(target=consumidor, args=(buffer_compartido, elementos_a_consumir))
+
+# Iniciar los hilos
+hilo_productor.start()
+hilo_consumidor.start()
+
+# Esperar a que ambos hilos terminen
+hilo_productor.join()
+hilo_consumidor.join()
+
+print("Programa finalizado.")
