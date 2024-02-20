@@ -1,0 +1,46 @@
+import etcd3
+import time
+
+class SemaforoDistribuido:
+    def __init__(self, nombre, num_recursos):
+        self.cliente_etcd = etcd3.client()
+        self.nombre = nombre
+        self.num_recursos = num_recursos
+
+    def adquirir(self):
+        while True:
+            try:
+                # Intentar adquirir un recurso
+                contador, _ = self.cliente_etcd.transaction(
+                    compare=[self.cliente_etcd.transactions.Value(self.nombre) == b'0'],
+                    success=[self.cliente_etcd.transactions.Put(self.nombre, b'1')],
+                    failure=[self.cliente_etcd.transactions.Get(self.nombre)]
+                )
+
+                if contador:
+                    return  # Adquirido con éxito
+
+            except etcd3.exceptions.Etcd3Exception as e:
+                print(f"Error: {e}")
+            
+            time.sleep(1)  # Esperar antes de intentar nuevamente
+
+    def liberar(self):
+        # Liberar el recurso
+        self.cliente_etcd.put(self.nombre, b'0')
+
+def tarea_protegida(semaforo, identificador):
+    semaforo.adquirir()
+    print(f"Proceso {identificador} ha adquirido el recurso.")
+    time.sleep(2)  # Simular procesamiento
+    semaforo.liberar()
+    print(f"Proceso {identificador} ha liberado el recurso.")
+
+if __name__ == "__main__":
+    semaforo = SemaforoDistribuido("mi_semaforo", 1)
+
+    # Simular múltiples procesos
+    for i in range(5):
+        proceso = multiprocessing.Process(target=tarea_protegida, args=(semaforo, i + 1))
+        proceso.start()
+        proceso.join()
