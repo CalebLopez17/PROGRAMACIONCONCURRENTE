@@ -1,0 +1,46 @@
+import threading
+
+def suma_subconjunto(subconjunto, resultado_parcial):
+    suma_parcial = sum(subconjunto)
+    with resultado_parcial_lock:
+        resultado_parcial.append(suma_parcial)
+
+# Función principal para la suma paralela
+def suma_paralela(lista, num_hilos):
+    # Dividir la lista en subconjuntos
+    tamano_subconjunto = len(lista) // num_hilos
+    subconjuntos = [lista[i:i + tamano_subconjunto] for i in range(0, len(lista), tamano_subconjunto)]
+
+    # Crear hilos y resultado parcial
+    hilos = []
+    resultado_parcial = []
+
+    # Lock para gestionar la sincronización al acceder al resultado parcial
+    global resultado_parcial_lock
+    resultado_parcial_lock = threading.Lock()
+
+    # Crear y lanzar los hilos
+    for i in range(num_hilos):
+        hilo = threading.Thread(target=suma_subconjunto, args=(subconjuntos[i], resultado_parcial))
+        hilos.append(hilo)
+        hilo.start()
+
+    # Esperar a que todos los hilos terminen
+    for hilo in hilos:
+        hilo.join()
+
+    # Sumar los resultados parciales
+    resultado_final = sum(resultado_parcial)
+
+    return resultado_final
+
+# Lista de ejemplo
+lista_numeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Número de hilos
+num_hilos = 3
+
+# Realizar la suma paralela
+resultado_final = suma_paralela(lista_numeros, num_hilos)
+
+print(f"Resultado final de la suma paralela: {resultado_final}")
