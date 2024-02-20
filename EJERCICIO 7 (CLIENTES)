@@ -1,0 +1,31 @@
+import socket
+
+# Configuración del cliente
+host = '127.0.0.1'
+puerto = 5555
+
+def realizar_tarea(cliente, tarea):
+    # Enviar la tarea al servidor
+    cliente.send(tarea.encode())
+
+    # Recibir el resultado del servidor
+    resultado = cliente.recv(1024).decode()
+    print(f"Resultado recibido: {resultado}")
+
+    # Cerrar la conexión con el servidor
+    cliente.close()
+
+# Cliente 1
+cliente1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+cliente1.connect((host, puerto))
+realizar_tarea(cliente1, "Tarea del Proceso 1")
+
+# Cliente 2
+cliente2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+cliente2.connect((host, puerto))
+realizar_tarea(cliente2, "Tarea del Proceso 2")
+
+# Cliente 3
+cliente3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+cliente3.connect((host, puerto))
+realizar_tarea(cliente3, "Tarea del Proceso 3")
