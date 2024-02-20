@@ -1,0 +1,23 @@
+import socket
+import time
+import random
+
+def realizar_tarea(client, tarea):
+    for intento in range(3):  # Hacer hasta 3 intentos en caso de fallo
+        try:
+            # Enviar la tarea al servidor
+            client.send(tarea.encode())
+
+            # Recibir el resultado del servidor
+            resultado = client.recv(1024).decode()
+            print(f"Resultado recibido: {resultado}")
+
+            # Cerrar la conexión con el servidor
+            client.close()
+            break  # Salir del bucle si la conexión y procesamiento fueron exitosos
+        except Exception as e:
+            print(f"Error en el Cliente: {e}")
+            print(f"Reintentando... (Intento {intento + 1})")
+            time.sleep(1)  # Esperar antes de volver a intentar
+
+# Resto del código del cliente como antes...
