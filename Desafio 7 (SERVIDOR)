@@ -1,0 +1,31 @@
+import socket
+import threading
+import time
+
+def handle_client(client, client_id):
+    try:
+        # Recibir tarea específica del cliente
+        tarea_recibida = client.recv(1024).decode()
+        print(f"Proceso {client_id} recibió la tarea: {tarea_recibida}")
+
+        # Realizar la parte específica de la tarea
+        resultado = realizar_tarea_particular(tarea_recibida)
+
+        # Enviar el resultado al cliente
+        client.send(resultado.encode())
+    except Exception as e:
+        print(f"Error en el Proceso {client_id}: {e}")
+    finally:
+        # Cerrar la conexión con el cliente
+        client.close()
+
+def realizar_tarea_particular(tarea):
+    # Simulamos un fallo con probabilidad del 20%
+    if random.random() < 0.2:
+        raise Exception("Error simulado al procesar la tarea")
+    else:
+        # Aquí implementa la lógica específica para cada tarea
+        # En este ejemplo, simplemente devolvemos la tarea en mayúsculas
+        return tarea.upper()
+
+# Resto del código del servidor como antes...
