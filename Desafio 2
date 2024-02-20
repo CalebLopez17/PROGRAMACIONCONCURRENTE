@@ -1,0 +1,57 @@
+import threading
+import time
+import queue
+
+class Nodo:
+    def __init__(self, id_nodo):
+        self.id = id_nodo
+        self.lider_actual = None
+        self.mensajes = queue.Queue()
+
+    def enviar_mensaje(self, mensaje, destino):
+        destino.mensajes.put((self.id, mensaje))
+
+    def recibir_mensaje(self):
+        while not self.mensajes.empty():
+            remitente, mensaje = self.mensajes.get()
+            self.procesar_mensaje(remitente, mensaje)
+
+    def procesar_mensaje(self, remitente, mensaje):
+        # En este ejemplo, solo nos importa el mensaje de elección de líder
+        if mensaje == 'ELECCION_LIDER':
+            self.elegir_lider(remitente)
+
+    def elegir_lider(self, remitente):
+        if self.lider_actual is None or remitente < self.lider_actual:
+            self.lider_actual = remitente
+
+def ejecutar_nodo(nodos, nodo_actual):
+    # Envía un mensaje de elección de líder a todos los nodos con un ID mayor
+    for nodo_destino in nodos:
+        if nodo_destino.id > nodo_actual.id:
+            nodo_actual.enviar_mensaje('ELECCION_LIDER', nodo_destino)
+
+    # Espera un tiempo simulado para recibir mensajes
+    time.sleep(1)
+
+    # Procesa los mensajes recibidos
+    nodo_actual.recibir_mensaje()
+
+    # Imprime el líder actual del nodo
+    print(f"Nodo {nodo_actual.id}: Líder Actual - {nodo_actual.lider_actual}")
+
+# Crear nodos
+num_nodos = 5
+nodos = [Nodo(i) for i in range(num_nodos)]
+
+# Crear y lanzar hilos para cada nodo
+hilos_nodos = [threading.Thread(target=ejecutar_nodo, args=(nodos, nodo)) for nodo in nodos]
+
+for hilo in hilos_nodos:
+    hilo.start()
+
+# Esperar a que todos los hilos terminen
+for hilo in hilos_nodos:
+    hilo.join()
+
+print("Proceso de elección de líder finalizado.")
