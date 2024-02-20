@@ -1,0 +1,33 @@
+import threading
+
+# Variable compartida
+variable_compartida = 0
+
+# Mutex para exclusión mutua
+mutex = threading.Lock()
+
+def modificar_variable(hilo_numero):
+    global variable_compartida
+
+    for _ in range(5):
+        # Bloquear el mutex antes de modificar la variable compartida
+        with mutex:
+            variable_compartida += 1
+            print(f"Hilo {hilo_numero}: Variable compartida modificada. Valor actual: {variable_compartida}")
+
+        # Simular alguna operación antes de volver a modificar la variable
+        threading.Event().wait(1)
+
+# Crear dos hilos
+hilo1 = threading.Thread(target=modificar_variable, args=(1,))
+hilo2 = threading.Thread(target=modificar_variable, args=(2,))
+
+# Iniciar los hilos
+hilo1.start()
+hilo2.start()
+
+# Esperar a que ambos hilos terminen
+hilo1.join()
+hilo2.join()
+
+print("Programa finalizado.")
