@@ -1,0 +1,57 @@
+import multiprocessing
+import time
+
+def procesar_tarea(tarea):
+    # Simular procesamiento de la tarea
+    time.sleep(1)
+    return f"Resultado de la tarea: {tarea}"
+
+def servidor(tarea_compartida, resultados_compartidos, fallo_simulado):
+    while True:
+        tarea = tarea_compartida.get()
+        if tarea is None:
+            break  # Señal para detener el servidor
+
+        if fallo_simulado and tarea % 2 == 0:
+            raise Exception(f"Error en el Nodo: Tarea {tarea} - Simulación de fallo!")
+
+        resultado = procesar_tarea(tarea)
+        resultados_compartidos.append(resultado)
+
+def sistema_distribuido(num_nodos, num_tareas):
+    # Cola compartida para tareas
+    tarea_compartida = multiprocessing.Queue()
+
+    # Lista compartida para resultados
+    resultados_compartidos = multiprocessing.Manager().list()
+
+    # Crear procesos del servidor
+    procesos_servidores = []
+    for i in range(num_nodos):
+        fallo_simulado = True if i == 1 else False  # Simular fallo en el Nodo 2
+        proceso_servidor = multiprocessing.Process(target=servidor, args=(tarea_compartida, resultados_compartidos, fallo_simulado))
+        procesos_servidores.append(proceso_servidor)
+        proceso_servidor.start()
+
+    # Enviar tareas a los nodos
+    for tarea in range(1, num_tareas + 1):
+        tarea_compartida.put(tarea)
+
+    # Enviar señal para detener los servidores
+    for _ in range(num_nodos):
+        tarea_compartida.put(None)
+
+    # Esperar a que todos los servidores terminen
+    for proceso_servidor in procesos_servidores:
+        proceso_servidor.join()
+
+    # Imprimir resultados
+    print("Resultados combinados:", resultados_compartidos)
+
+if __name__ == "__main__":
+    # Configuración
+    num_nodos = 3
+    num_tareas = 10
+
+    # Ejecutar el sistema distribuido
+    sistema_distribuido(num_nodos, num_tareas)
